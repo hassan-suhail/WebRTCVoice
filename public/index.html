@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Educator Web App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div id="login-container">
+            <h2>Login</h2>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button id="login-btn">Login</button>
+        </div>
+        <div id="educator-container" style="display:none;">
+            <h2>Broadcast Audio</h2>
+            <button id="start-btn">Start Broadcast</button>
+            <button id="stop-btn" style="display:none;">Stop Broadcast</button>
+        </div>
+        <div id="listener-container" style="display:none;">
+            <h2>Listen</h2>
+            <audio id="audio" controls autoplay></audio>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

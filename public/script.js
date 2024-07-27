@@ -4,11 +4,19 @@ document.getElementById('login-btn').addEventListener('click', () => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
-    if (username === 'admin1' && password === 'admin1ac') {
+    if (username === 'AEDHuzaifa' && password === 'ADMIN1AC') {
         document.getElementById('login-container').style.display = 'none';
         document.getElementById('educator-container').style.display = 'block';
         startEducator();
     } else if (username === 'student' && password === 'student00') {
+        document.getElementById('login-container').style.display = 'none';
+        document.getElementById('listener-container').style.display = 'block';
+        startListener();
+    } else if (username === 'AEDHassan' && password === 'Admin2AC') {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('educator-container').style.display = 'block';
+            startEducator();
+    } else if (username === 'studentad' && password === 'Passstudentad0068') {
         document.getElementById('login-container').style.display = 'none';
         document.getElementById('listener-container').style.display = 'block';
         startListener();

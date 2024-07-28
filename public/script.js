@@ -4,19 +4,13 @@ document.getElementById('login-btn').addEventListener('click', () => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
-    if (username === 'AEDHuzaifa' && password === 'ADMIN1AC') {
+    console.log(`Logging in with username: ${username}`);
+
+    if (username === 'admin1' && password === 'admin1ac') {
         document.getElementById('login-container').style.display = 'none';
         document.getElementById('educator-container').style.display = 'block';
         startEducator();
     } else if (username === 'student' && password === 'student00') {
-        document.getElementById('login-container').style.display = 'none';
-        document.getElementById('listener-container').style.display = 'block';
-        startListener();
-    } else if (username === 'AEDHassan' && password === 'Admin2AC') {
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('educator-container').style.display = 'block';
-            startEducator();
-    } else if (username === 'studentad' && password === 'Passstudentad0068') {
         document.getElementById('login-container').style.display = 'none';
         document.getElementById('listener-container').style.display = 'block';
         startListener();
@@ -39,28 +33,37 @@ const servers = {
 };
 
 async function startEducator() {
+    console.log('Starting educator...');
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    peerConnection = new RTCPeerConnection(servers);
-    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+    console.log('Obtained local stream');
 
-    peerConnection.onicecandidate = event => {
-        if (event.candidate) {
-            socket.emit('candidate', event.candidate);
-        }
-    };
+    socket.emit('broadcaster');
 
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    socket.emit('offer', offer);
+    socket.on('watcher', id => {
+        peerConnection = new RTCPeerConnection(servers);
+        localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+        });
 
-    socket.on('answer', async (answer) => {
-        const remoteDesc = new RTCSessionDescription(answer);
-        await peerConnection.setRemoteDescription(remoteDesc);
-    });
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+                socket.emit('candidate', id, event.candidate);
+            }
+        };
 
-    socket.on('candidate', async (candidate) => {
-        const iceCandidate = new RTCIceCandidate(candidate);
-        await peerConnection.addIceCandidate(iceCandidate);
+        peerConnection.createOffer().then(offer => {
+            return peerConnection.setLocalDescription(offer);
+        }).then(() => {
+            socket.emit('offer', id, peerConnection.localDescription);
+        });
+
+        socket.on('answer', (id, description) => {
+            peerConnection.setRemoteDescription(description);
+        });
+
+        socket.on('candidate', (id, candidate) => {
+            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        });
     });
 
     document.getElementById('start-btn').addEventListener('click', () => {
@@ -72,32 +75,38 @@ async function startEducator() {
         localStream.getTracks().forEach(track => track.stop());
         document.getElementById('start-btn').style.display = 'block';
         document.getElementById('stop-btn').style.display = 'none';
+        socket.emit('disconnect');
     });
 }
 
 async function startListener() {
-    peerConnection = new RTCPeerConnection(servers);
+    console.log('Starting listener...');
 
-    peerConnection.ontrack = event => {
-        const [remoteStream] = event.streams;
-        audioElement.srcObject = remoteStream;
-    };
+    socket.emit('watcher');
 
-    peerConnection.onicecandidate = event => {
-        if (event.candidate) {
-            socket.emit('candidate', event.candidate);
-        }
-    };
+    socket.on('offer', (id, description) => {
+        peerConnection = new RTCPeerConnection(servers);
+        peerConnection.setRemoteDescription(description).then(() => {
+            return peerConnection.createAnswer();
+        }).then(sdp => {
+            return peerConnection.setLocalDescription(sdp);
+        }).then(() => {
+            socket.emit('answer', id, peerConnection.localDescription);
+        });
 
-    socket.on('offer', async (offer) => {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        socket.emit('answer', answer);
+        peerConnection.ontrack = event => {
+            const [remoteStream] = event.streams;
+            audioElement.srcObject = remoteStream;
+        };
+
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+                socket.emit('candidate', id, event.candidate);
+            }
+        };
     });
 
-    socket.on('candidate', async (candidate) => {
-        const iceCandidate = new RTCIceCandidate(candidate);
-        await peerConnection.addIceCandidate(iceCandidate);
+    socket.on('candidate', (id, candidate) => {
+        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
     });
 }
